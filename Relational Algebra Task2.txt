@@ -1,0 +1,31 @@
+-- before optimization --
+π {S.Name, C.Title, E.Grade} (
+    σ {S.StudentID = E.StudentID AND C.CourseID = E.CourseID AND S.Major = 'Computer Science' AND C.Credits >= 3}
+    (STUDENT × COURSE × ENROLLMENT)
+)
+
+// Optimization Steps // 
+
+(1) Selection Pushdown
+Move filters (S.Major = 'Computer Science' and C.Credits >= 3) as close as possible to their respective base tables to reduce the size of intermediate results.
+
+(2) Join Conversion
+Replace the Cartesian product (×) with theta joins (⋈) using the join conditions:
+S.StudentID = E.StudentID
+C.CourseID = E.CourseID
+
+(3) Join Ordering
+Join the filtered STUDENT table with ENROLLMENT first (smaller intermediate result), then join with the filtered COURSE.
+
+(4) Projection Push-Up
+Delay projection (π) until the end so all necessary attributes are available for join and selection operations.
+
+-- after optimization --
+π {S.Name, C.Title, E.Grade} (
+  (σ {S.Major = 'Computer Science'}(STUDENT)
+   ⋈ {S.StudentID = E.StudentID} ENROLLMENT)
+   ⋈ {C.CourseID = E.CourseID}
+   σ {C.Credits >= 3}(COURSE)
+)
+
+
